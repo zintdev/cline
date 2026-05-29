@@ -41,8 +41,8 @@ interface ParsedCommand {
 export class CommandPermissionController {
 	private config: CommandPermissionConfig | null = null
 
-	constructor() {
-		this.config = this.parseConfig()
+	constructor(config?: CommandPermissionConfig | null) {
+		this.config = config ?? this.parseConfig()
 	}
 
 	/**
@@ -59,8 +59,10 @@ export class CommandPermissionController {
 			const parsed = JSON.parse(envValue)
 			return {
 				allow: Array.isArray(parsed.allow) ? parsed.allow : undefined,
+				requireApproval: Array.isArray(parsed.requireApproval) ? parsed.requireApproval : undefined,
 				deny: Array.isArray(parsed.deny) ? parsed.deny : undefined,
 				allowRedirects: typeof parsed.allowRedirects === "boolean" ? parsed.allowRedirects : undefined,
+				unmatchedCommandPolicy: "legacy_deny_unmatched",
 			}
 		} catch (error) {
 			Logger.error(`Failed to parse ${COMMAND_PERMISSIONS_ENV_VAR}:`, error)
@@ -142,12 +144,26 @@ export class CommandPermissionController {
 				}
 				return result
 			}
+
+			if (result.requiresApproval) {
+				if (isMultiSegment) {
+					return {
+						...result,
+						failedSegment: segment,
+						reason: "segment_requires_approval",
+					}
+				}
+				return result
+			}
 		}
 
 		// Recursively validate subshell contents
 		for (const subshell of parsed.subshells) {
 			const result = this.validateParsedCommand(subshell, fullCommand)
 			if (!result.allowed) {
+				return result
+			}
+			if (result.requiresApproval) {
 				return result
 			}
 		}
@@ -171,6 +187,15 @@ export class CommandPermissionController {
 			}
 		}
 
+		// Check require-approval rules before allow rules
+		if (this.config?.requireApproval) {
+			for (const pattern of this.config.requireApproval) {
+				if (this.matchesPattern(command, pattern)) {
+					return { allowed: true, requiresApproval: true, matchedPattern: pattern, reason: "requires_approval" }
+				}
+			}
+		}
+
 		// Check allow rules
 		if (this.config?.allow && this.config.allow.length > 0) {
 			for (const pattern of this.config.allow) {
@@ -178,8 +203,16 @@ export class CommandPermissionController {
 					return { allowed: true, matchedPattern: pattern, reason: "allowed" }
 				}
 			}
+			if (this.config.unmatchedCommandPolicy === "require_approval") {
+				return { allowed: true, requiresApproval: true, reason: "requires_approval" }
+			}
+
 			// Allow rules defined but no match = deny by default
 			return { allowed: false, reason: "no_match_deny_default" }
+		}
+
+		if (this.config?.unmatchedCommandPolicy === "require_approval") {
+			return { allowed: true, requiresApproval: true, reason: "requires_approval" }
 		}
 
 		// No allow rules defined, and no deny matched = allow

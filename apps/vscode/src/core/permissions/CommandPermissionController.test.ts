@@ -171,6 +171,77 @@ describe("CommandPermissionController", () => {
 		})
 	})
 
+	describe("Require Approval Rules", () => {
+		it("should mark commands matching requireApproval patterns as allowed with forced approval", () => {
+			const controller = new CommandPermissionController({
+				requireApproval: ["npm install*"],
+			})
+
+			const result = controller.validateCommand("npm install lodash")
+
+			result.allowed.should.be.true()
+			result.requiresApproval!.should.be.true()
+			result.reason.should.equal("requires_approval")
+			result.matchedPattern!.should.equal("npm install*")
+		})
+
+		it("should allow autoAllow commands without forced approval", () => {
+			const controller = new CommandPermissionController({
+				allow: ["git status"],
+				requireApproval: ["npm install*"],
+				unmatchedCommandPolicy: "require_approval",
+			})
+
+			const result = controller.validateCommand("git status")
+
+			result.allowed.should.be.true()
+			should(result.requiresApproval).not.be.true()
+			result.reason.should.equal("allowed")
+		})
+
+		it("should require approval for unmatched commands when configured for custom policy", () => {
+			const controller = new CommandPermissionController({
+				allow: ["git status"],
+				deny: ["rm -rf *"],
+				unmatchedCommandPolicy: "require_approval",
+			})
+
+			const result = controller.validateCommand("python script.py")
+
+			result.allowed.should.be.true()
+			result.requiresApproval!.should.be.true()
+			result.reason.should.equal("requires_approval")
+		})
+
+		it("should preserve legacy env allowlist unmatched denial", () => {
+			process.env[COMMAND_PERMISSIONS_ENV_VAR] = JSON.stringify({
+				allow: ["git *"],
+			})
+			const controller = new CommandPermissionController()
+
+			const result = controller.validateCommand("python script.py")
+
+			result.allowed.should.be.false()
+			result.reason.should.equal("no_match_deny_default")
+			should(result.requiresApproval).not.be.true()
+		})
+
+		it("should let deny rules take precedence over requireApproval and allow rules", () => {
+			const controller = new CommandPermissionController({
+				allow: ["npm *"],
+				requireApproval: ["npm install*"],
+				deny: ["npm install dangerous-package"],
+				unmatchedCommandPolicy: "require_approval",
+			})
+
+			const result = controller.validateCommand("npm install dangerous-package")
+
+			result.allowed.should.be.false()
+			result.reason.should.equal("denied")
+			result.matchedPattern!.should.equal("npm install dangerous-package")
+		})
+	})
+
 	describe("Glob Pattern Matching", () => {
 		it("should match wildcard patterns", () => {
 			process.env[COMMAND_PERMISSIONS_ENV_VAR] = JSON.stringify({
@@ -373,6 +444,21 @@ describe("CommandPermissionController", () => {
 				const result = controller.validateCommand("echo hello; ls -la")
 				result.allowed.should.be.true()
 				result.reason.should.equal("allowed")
+			})
+
+			it("should require approval when any chained segment requires approval", () => {
+				const controller = new CommandPermissionController({
+					allow: ["git status"],
+					requireApproval: ["npm install*"],
+					unmatchedCommandPolicy: "require_approval",
+				})
+
+				const result = controller.validateCommand("git status && npm install lodash")
+
+				result.allowed.should.be.true()
+				result.requiresApproval!.should.be.true()
+				result.reason.should.equal("segment_requires_approval")
+				result.failedSegment!.should.equal("npm install lodash")
 			})
 		})
 
@@ -577,6 +663,20 @@ describe("CommandPermissionController", () => {
 
 			controller.validateCommand("echo hello > file.txt").allowed.should.be.true()
 			controller.validateCommand("echo hello >> file.txt").allowed.should.be.true()
+		})
+
+		it("should require approval for unmatched custom commands even when redirects are allowed", () => {
+			const controller = new CommandPermissionController({
+				allow: ["git status"],
+				allowRedirects: true,
+				unmatchedCommandPolicy: "require_approval",
+			})
+
+			const result = controller.validateCommand("echo hello > file.txt")
+
+			result.allowed.should.be.true()
+			result.requiresApproval!.should.be.true()
+			result.reason.should.equal("requires_approval")
 		})
 
 		it("should allow input redirect when allowRedirects is true", () => {
