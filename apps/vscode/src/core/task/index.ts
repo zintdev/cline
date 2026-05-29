@@ -7,6 +7,8 @@ import { checkContextWindowExceededError } from "@core/context/context-managemen
 import { getContextWindowInfo } from "@core/context/context-management/context-window-utils"
 import { EnvironmentContextTracker } from "@core/context/context-tracking/EnvironmentContextTracker"
 import { FileContextTracker } from "@core/context/context-tracking/FileContextTracker"
+import { loadSafeCommandsConfig } from "@core/custom/configLoader"
+import { safeCommandsConfigToCommandPermissionConfig } from "@core/custom/safeCommandPolicy"
 import { ModelContextTracker } from "@core/context/context-tracking/ModelContextTracker"
 import {
 	getGlobalClineRules,
@@ -315,7 +317,9 @@ export class Task {
 		this.reinitExistingTaskFromId = reinitExistingTaskFromId
 		this.cancelTask = cancelTask
 		this.clineIgnoreController = new ClineIgnoreController(cwd)
-		this.commandPermissionController = new CommandPermissionController()
+		const safeCommandsConfig = loadSafeCommandsConfig()
+		const commandPermissionConfig = safeCommandsConfigToCommandPermissionConfig(safeCommandsConfig)
+		this.commandPermissionController = new CommandPermissionController(commandPermissionConfig)
 		this.taskLockAcquired = taskLockAcquired
 		// Determine terminal execution mode and create appropriate terminal manager
 		this.terminalExecutionMode = vscodeTerminalExecutionMode || "vscodeTerminal"

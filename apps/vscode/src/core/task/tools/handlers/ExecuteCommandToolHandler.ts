@@ -1,19 +1,19 @@
-import type { ToolUse } from "@core/assistant-message"
-import { formatResponse } from "@core/prompts/responses"
-import { WorkspacePathAdapter } from "@core/workspace/WorkspacePathAdapter"
-import { showApprovalNotification, showSystemNotification } from "@integrations/notifications"
-import { COMMAND_REQ_APP_STRING } from "@shared/combineCommandSequences"
-import { ClineAsk } from "@shared/ExtensionMessage"
-import { arePathsEqual } from "@utils/path"
-import { telemetryService } from "@/services/telemetry"
-import { ClineDefaultTool } from "@/shared/tools"
-import type { ToolResponse } from "../../index"
-import type { IFullyManagedTool } from "../ToolExecutorCoordinator"
-import type { ToolValidator } from "../ToolValidator"
-import type { TaskConfig } from "../types/TaskConfig"
-import type { StronglyTypedUIHelpers } from "../types/UIHelpers"
-import { applyModelContentFixes } from "../utils/ModelContentProcessor"
-import { ToolResultUtils } from "../utils/ToolResultUtils"
+import type { ToolUse } from "@core/assistant-message";
+import { formatResponse } from "@core/prompts/responses";
+import { WorkspacePathAdapter } from "@core/workspace/WorkspacePathAdapter";
+import { showApprovalNotification, showSystemNotification } from "@integrations/notifications";
+import { COMMAND_REQ_APP_STRING } from "@shared/combineCommandSequences";
+import { ClineAsk } from "@shared/ExtensionMessage";
+import { arePathsEqual } from "@utils/path";
+import { telemetryService } from "@/services/telemetry";
+import { ClineDefaultTool } from "@/shared/tools";
+import type { ToolResponse } from "../../index";
+import type { IFullyManagedTool } from "../ToolExecutorCoordinator";
+import type { ToolValidator } from "../ToolValidator";
+import type { TaskConfig } from "../types/TaskConfig";
+import type { StronglyTypedUIHelpers } from "../types/UIHelpers";
+import { applyModelContentFixes } from "../utils/ModelContentProcessor";
+import { ToolResultUtils } from "../utils/ToolResultUtils";
 
 // Default timeout for commands in yolo mode and background exec mode
 const DEFAULT_COMMAND_TIMEOUT_SECONDS = 30
@@ -53,6 +53,28 @@ export function resolveCommandTimeoutSeconds(
 	}
 
 	return isLikelyLongRunningCommand(command) ? LONG_RUNNING_COMMAND_TIMEOUT_SECONDS : DEFAULT_COMMAND_TIMEOUT_SECONDS
+}
+
+export function shouldAutoApproveCommand(options: {
+	isSubagentExecution: boolean
+	requiresApprovalPerLLM: boolean
+	requiresApprovalByPolicy: boolean
+	autoApproveSafe: boolean | undefined
+	autoApproveAll: boolean | undefined
+}): boolean {
+	if (options.requiresApprovalByPolicy) {
+		return false
+	}
+
+	if (options.isSubagentExecution) {
+		return true
+	}
+
+	if (!options.requiresApprovalPerLLM) {
+		return options.autoApproveSafe === true
+	}
+
+	return options.autoApproveSafe === true && options.autoApproveAll === true
 }
 
 export class ExecuteCommandToolHandler implements IFullyManagedTool {
@@ -179,6 +201,10 @@ export class ExecuteCommandToolHandler implements IFullyManagedTool {
 			}
 			return formatResponse.toolError(formatResponse.permissionDeniedError(errorMessage))
 		}
+		const requiresApprovalByPolicy = permissionResult.requiresApproval === true
+		if (requiresApprovalByPolicy && config.isSubagentExecution) {
+			return formatResponse.toolDenied()
+		}
 
 		// Check clineignore validation for command
 		const ignoredFileAttemptedToAccess = config.services.clineIgnoreController.validateCommand(actualCommand)
@@ -197,6 +223,7 @@ export class ExecuteCommandToolHandler implements IFullyManagedTool {
 		const [autoApproveSafe, autoApproveAll] = Array.isArray(autoApproveResult)
 			? autoApproveResult
 			: [autoApproveResult, false]
+		const requiresApproval = requiresApprovalPerLLM || requiresApprovalByPolicy
 
 		// Determine workspace context for telemetry
 		const resolvedToNonPrimary = !arePathsEqual(executionDir, config.cwd)
@@ -221,9 +248,13 @@ export class ExecuteCommandToolHandler implements IFullyManagedTool {
 		}
 
 		if (
-			config.isSubagentExecution ||
-			(!requiresApprovalPerLLM && autoApproveSafe) ||
-			(requiresApprovalPerLLM && autoApproveSafe && autoApproveAll)
+			shouldAutoApproveCommand({
+				isSubagentExecution: config.isSubagentExecution,
+				requiresApprovalPerLLM,
+				requiresApprovalByPolicy,
+				autoApproveSafe,
+				autoApproveAll,
+			})
 		) {
 			// Auto-approve flow
 			if (!config.isSubagentExecution) {
@@ -244,13 +275,13 @@ export class ExecuteCommandToolHandler implements IFullyManagedTool {
 		} else {
 			// Manual approval flow
 			void showApprovalNotification(
-				{ message: actualCommand, requiresExplicitApproval: autoApproveSafe && requiresApprovalPerLLM },
+				{ message: actualCommand, requiresExplicitApproval: autoApproveSafe && requiresApproval },
 				config.autoApprovalSettings.enableNotifications,
 			)
 
 			const didApprove = await ToolResultUtils.askApprovalAndPushFeedback(
 				"command",
-				actualCommand + `${autoApproveSafe && requiresApprovalPerLLM ? COMMAND_REQ_APP_STRING : ""}`,
+				actualCommand + `${autoApproveSafe && requiresApproval ? COMMAND_REQ_APP_STRING : ""}`,
 				config,
 			)
 			if (!didApprove) {
