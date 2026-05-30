@@ -1,5 +1,6 @@
 import type { Anthropic } from "@anthropic-ai/sdk"
-import { buildApiHandler } from "@core/api"
+import { buildApiHandler, resolveApiConfigurationForMainTask } from "@core/api"
+import { loadModelRoutingConfig } from "@core/custom/configLoader"
 import { getHooksEnabledSafe } from "@core/hooks/hooks-utils"
 import { tryAcquireTaskLockWithRetry } from "@core/task/TaskLockUtils"
 import { detectWorkspaceRoots } from "@core/workspace/detection"
@@ -373,7 +374,13 @@ export class Controller {
 		// Update API handler with new mode (buildApiHandler now selects provider based on mode)
 		if (this.task) {
 			const apiConfiguration = this.stateManager.getApiConfiguration()
-			this.task.api = buildApiHandler({ ...apiConfiguration, ulid: this.task.ulid }, modeToSwitchTo)
+			const effectiveApiConfiguration = { ...apiConfiguration, ulid: this.task.ulid }
+			const routedApiConfiguration = resolveApiConfigurationForMainTask(
+				effectiveApiConfiguration,
+				modeToSwitchTo,
+				loadModelRoutingConfig(),
+			)
+			this.task.api = buildApiHandler(routedApiConfiguration, modeToSwitchTo)
 		}
 
 		await this.postStateToWebview()
@@ -397,7 +404,13 @@ export class Controller {
 		// Update API handler with new mode (buildApiHandler now selects provider based on mode)
 		if (this.task) {
 			const apiConfiguration = this.stateManager.getApiConfiguration()
-			this.task.api = buildApiHandler({ ...apiConfiguration, ulid: this.task.ulid }, modeToSwitchTo)
+			const effectiveApiConfiguration = { ...apiConfiguration, ulid: this.task.ulid }
+			const routedApiConfiguration = resolveApiConfigurationForMainTask(
+				effectiveApiConfiguration,
+				modeToSwitchTo,
+				loadModelRoutingConfig(),
+			)
+			this.task.api = buildApiHandler(routedApiConfiguration, modeToSwitchTo)
 		}
 
 		await this.postStateToWebview()
