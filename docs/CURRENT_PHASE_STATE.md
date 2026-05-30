@@ -5,7 +5,7 @@
 Path: `/home/zintdev/projects/cline-phase-5-1c-clean`
 Branch: `custom/phase-5-1c-workflow-state-clean`
 Expected working tree: clean
-Latest expected commit: `ee06ad456 feat: add workflow state reset helper`
+Latest expected commit: `e2e75d221 feat: reset workflow state after plan feedback`
 
 ## Recently Completed
 
@@ -88,24 +88,49 @@ Validation:
 - `npm run check-types`: PASS
 - `npm run package`: PASS
 
+### Phase 5.1d — Runtime Reset After Normal Plan Feedback
+
+Status: DONE  
+Commit: `e2e75d221 feat: reset workflow state after plan feedback`
+
+Files:
+- `apps/vscode/src/core/task/tools/handlers/PlanModeRespondHandler.ts`
+- `apps/vscode/src/core/task/tools/handlers/__tests__/PlanModeRespondHandler.workflowState.test.ts`
+
+Behavior:
+- Imports and uses `resetWorkflowState(...)`.
+- Preserves `waitingForPlanApproval` during normal Plan Mode approval ask.
+- Resets workflow state to `idle` after normal Plan Mode ask returns without Plan → Act switch.
+- Preserves `implementationAllowed` for user Plan → Act switch.
+- Preserves `implementationAllowed` for YOLO Plan → Act auto-switch.
+- Preserves `planning` for `needs_more_exploration`.
+- Passive-only: no enforcement, persistence, migration, controller, ToolExecutor, UI/proto/generated, subagent, or Phase 4 routing changes.
+
+Validation:
+- `PlanModeRespondHandler.workflowState.test.ts`: 5 passing
+- `npm run check-types`: PASS
+- `npm run package`: PASS
+
 ## Current Phase
 
-Phase 5.1c is complete. The next recommended step is Phase 5.1d planning only.
+Phase 5.1d is complete. The next recommended step is Phase 5.1e planning only.
 
 ## Next Recommended Phase
 
-### Phase 5.1d — Workflow State Runtime Reset Integration Planning
+### Phase 5.1e — Workflow State Next Runtime Boundary Planning
 
 Goal:
-- Decide the next minimal separately approved runtime integration step for using the reset helper.
+- Decide whether any additional passive workflow-state reset boundary is needed, such as cancellation, task completion, or task disposal.
 
 Planning only:
-- Do not implement runtime wiring without approval.
+- Do not implement enforcement.
 - Do not add persistence or migration.
-- Do not add enforcement.
-- Do not touch controller, ToolExecutor, TaskState, PlanModeRespondHandler, UI/proto/generated, subagents, or Phase 4 routing unless separately approved.
+- Do not change controller unless separately approved.
+- Do not change ToolExecutor unless separately approved.
+- Do not change UI/webview/proto/generated files.
+- Do not touch subagents or Phase 4 routing.
 
-Do not implement Phase 5.1d without approval.
+Do not implement Phase 5.1e without approval.
 
 ## Guardrails
 
@@ -122,6 +147,6 @@ Do not touch unless explicitly approved:
 
 Do not:
 - run validation without approval
-- implement Phase 5.1d without approval
+- implement Phase 5.1e without approval
 - commit without approval
 - use `git add .`
