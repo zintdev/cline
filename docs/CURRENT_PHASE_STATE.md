@@ -5,7 +5,7 @@
 Path: `/home/zintdev/projects/cline`
 Branch: `custom/phase-4-model-routing`
 Expected working tree: clean
-Latest expected commit: `9083050f6 feat: add workflow state helper`
+Latest expected commit: `bb8d4a6cb feat: track workflow state in plan responses`
 
 ## Recently Completed
 
@@ -44,24 +44,48 @@ Validation:
 - `npm run check-types`: PASS
 - `npm run package`: PASS
 
+### Phase 5.1b — Passive Runtime Workflow-State Tracking
+
+Status: DONE  
+Commit: `bb8d4a6cb feat: track workflow state in plan responses`
+
+Files:
+- `apps/vscode/src/core/task/TaskState.ts`
+- `apps/vscode/src/core/task/tools/handlers/PlanModeRespondHandler.ts`
+- `apps/vscode/src/core/task/tools/handlers/__tests__/PlanModeRespondHandler.workflowState.test.ts`
+
+Behavior:
+- Adds runtime-only `workflowState` to `TaskState`.
+- Tracks `planning` during Plan Mode responses.
+- Tracks `waitingForPlanApproval` before normal approval ask.
+- Tracks `implementationAllowed` when user switches Plan → Act.
+- Tracks `implementationAllowed` after YOLO Plan → Act auto-switch succeeds.
+- Passive-only tracking: no enforcement change, no persisted state, no migration.
+
+Validation:
+- `PlanModeRespondHandler.workflowState.test.ts`: 5 passing
+- `npm run check-types`: PASS
+- `npm run package`: PASS
+
 ## Current Phase
 
-Phase 5.1a is complete. The next recommended phase is Phase 5.1b planning only.
+Phase 5.1b is complete. The next recommended step is Phase 5.1c planning only.
 
 ## Next Recommended Phase
 
-### Phase 5.1b — Workflow Helper Runtime Wiring Plan
+### Phase 5.1c — Workflow State Handoff / Next Integration Planning
 
 Goal:
-- Decide whether and where to wire the pure workflow helper into runtime.
+- Decide the next minimal separately approved workflow-state step after passive tracking.
 
-Likely files to inspect during planning:
-- `apps/vscode/src/core/task/TaskState.ts`
-- `apps/vscode/src/core/task/tools/handlers/PlanModeRespondHandler.ts`
-- `apps/vscode/src/core/controller/index.ts`
-- `apps/vscode/src/core/task/ToolExecutor.ts`
+Planning only:
+- Do not implement enforcement.
+- Do not add persistence or migration.
+- Do not change controller wiring unless separately approved.
+- Do not change ToolExecutor unless separately approved.
+- Do not change UI/webview/proto/generated files.
 
-Do not implement Phase 5.1b until separately approved.
+Do not implement Phase 5.1c without approval.
 
 ## Guardrails
 
@@ -78,6 +102,6 @@ Do not touch unless explicitly approved:
 
 Do not:
 - run validation without approval
-- implement Phase 5.1b without approval
+- implement Phase 5.1c without approval
 - commit without approval
 - use `git add .`
