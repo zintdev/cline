@@ -58,7 +58,7 @@ describe("PlanModeRespondHandler workflow state", () => {
 		config.taskState.workflowState.should.equal("planning")
 	})
 
-	it("marks workflow state as waitingForPlanApproval before normal approval ask", async () => {
+	it("marks workflow state as waitingForPlanApproval during normal approval ask then resets to idle", async () => {
 		const handler = new PlanModeRespondHandler()
 		const config = createConfig({
 			callbacks: {
@@ -74,7 +74,7 @@ describe("PlanModeRespondHandler workflow state", () => {
 			params: { response: "Here is the plan" },
 		} as any)
 
-		config.taskState.workflowState.should.equal("waitingForPlanApproval")
+		config.taskState.workflowState.should.equal("idle")
 	})
 
 	it("marks workflow state as implementationAllowed when user switches Plan to Act", async () => {
