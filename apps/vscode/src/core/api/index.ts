@@ -47,7 +47,7 @@ import { XAIHandler } from "./providers/xai"
 import { ZAiHandler } from "./providers/zai"
 import { ApiStream, ApiStreamUsageChunk } from "./transform/stream"
 
-export { resolveApiConfigurationForRole } from "./modelRouting"
+export { resolveApiConfigurationForMainTask, resolveApiConfigurationForRole } from "./modelRouting"
 
 export type CommonApiHandlerOptions = {
 	onRetryAttempt?: ApiConfiguration["onRetryAttempt"]

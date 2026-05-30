@@ -5,7 +5,7 @@ import type { ApiConfiguration } from "@shared/api"
 import type { ModelRoutingConfig } from "@/core/custom/types"
 
 const require = createRequire(import.meta.url)
-const { resolveApiConfigurationForRole } = require("../modelRouting")
+const { resolveApiConfigurationForMainTask, resolveApiConfigurationForRole } = require("../modelRouting")
 
 function createBaseConfiguration(): ApiConfiguration {
 	return {
@@ -154,5 +154,79 @@ describe("resolveApiConfigurationForRole", () => {
 		resolveApiConfigurationForRole(configuration, "plan", "planning", routingConfig)
 
 		assert.deepEqual(configuration, originalConfiguration)
+	})
+})
+
+describe("resolveApiConfigurationForMainTask", () => {
+	it("uses planning role for plan mode", () => {
+		const configuration = createBaseConfiguration()
+		const routingConfig: ModelRoutingConfig = {
+			routing: {
+				planning: {
+					provider: "openrouter",
+					model: "anthropic/claude-opus-route",
+				},
+				implementation: {
+					provider: "openai-codex",
+					model: "gpt-5.5-codex",
+				},
+			},
+		}
+
+		const resolved = resolveApiConfigurationForMainTask(configuration, "plan", routingConfig)
+
+		assert.equal(resolved.planModeApiProvider, "openrouter")
+		assert.equal(resolved.planModeOpenRouterModelId, "anthropic/claude-opus-route")
+		assert.equal(resolved.actModeApiProvider, configuration.actModeApiProvider)
+		assert.equal(resolved.actModeApiModelId, configuration.actModeApiModelId)
+	})
+
+	it("uses implementation role for act mode", () => {
+		const configuration = createBaseConfiguration()
+		const routingConfig: ModelRoutingConfig = {
+			routing: {
+				planning: {
+					provider: "openrouter",
+					model: "anthropic/claude-opus-route",
+				},
+				implementation: {
+					provider: "openai",
+					model: "gpt-openai-role",
+				},
+			},
+		}
+
+		const resolved = resolveApiConfigurationForMainTask(configuration, "act", routingConfig)
+
+		assert.equal(resolved.actModeApiProvider, "openai")
+		assert.equal(resolved.actModeOpenAiModelId, "gpt-openai-role")
+		assert.equal(resolved.planModeApiProvider, configuration.planModeApiProvider)
+		assert.equal(resolved.planModeApiModelId, configuration.planModeApiModelId)
+	})
+
+	it("returns unchanged cloned config when routing config is missing", () => {
+		const configuration = createBaseConfiguration()
+
+		const resolved = resolveApiConfigurationForMainTask(configuration, "plan")
+
+		assert.deepEqual(resolved, configuration)
+		assert.notEqual(resolved, configuration)
+	})
+
+	it("returns unchanged cloned config when provider is invalid", () => {
+		const configuration = createBaseConfiguration()
+		const routingConfig: ModelRoutingConfig = {
+			routing: {
+				implementation: {
+					provider: "openai-compatible",
+					model: "gpt-5.5-codex",
+				},
+			},
+		}
+
+		const resolved = resolveApiConfigurationForMainTask(configuration, "act", routingConfig)
+
+		assert.deepEqual(resolved, configuration)
+		assert.notEqual(resolved, configuration)
 	})
 })

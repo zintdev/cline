@@ -132,3 +132,16 @@ export function resolveApiConfigurationForRole(
 
 	return resolvedConfiguration
 }
+
+export function resolveApiConfigurationForMainTask(
+	configuration: ApiConfiguration,
+	mode: Mode,
+	routingConfig?: ModelRoutingConfig | null,
+): ApiConfiguration {
+	return resolveApiConfigurationForRole(
+		configuration,
+		mode,
+		mode === "plan" ? "planning" : "implementation",
+		routingConfig,
+	)
+}

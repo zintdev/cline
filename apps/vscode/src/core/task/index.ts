@@ -1,5 +1,5 @@
 import { setTimeout as setTimeoutPromise } from "node:timers/promises"
-import { ApiHandler, ApiProviderInfo, buildApiHandler, resolveApiConfigurationForRole } from "@core/api"
+import { ApiHandler, ApiProviderInfo, buildApiHandler, resolveApiConfigurationForMainTask } from "@core/api"
 import { ApiStream } from "@core/api/transform/stream"
 import { AssistantMessageContent, parseAssistantMessageV2, ToolUse } from "@core/assistant-message"
 import { ContextManager } from "@core/context/context-management/ContextManager"
@@ -492,13 +492,10 @@ export class Task {
 		}
 		const mode = this.stateManager.getGlobalSettingsKey("mode")
 		const currentProvider = mode === "plan" ? apiConfiguration.planModeApiProvider : apiConfiguration.actModeApiProvider
-		const modelRoutingConfig = loadModelRoutingConfig()
-		const modelRoutingRole = mode === "plan" ? "planning" : "implementation"
-		const routedApiConfiguration = resolveApiConfigurationForRole(
+		const routedApiConfiguration = resolveApiConfigurationForMainTask(
 			effectiveApiConfiguration,
 			mode,
-			modelRoutingRole,
-			modelRoutingConfig,
+			loadModelRoutingConfig(),
 		)
 
 		// Now that ulid is initialized, we can build the API handler
