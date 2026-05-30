@@ -6,6 +6,7 @@ import { ClinePlanModeResponse } from "@/shared/ExtensionMessage"
 import { Logger } from "@/shared/services/Logger"
 import { ClineDefaultTool } from "@/shared/tools"
 import type { ToolResponse } from "../../index"
+import { approvePlanForImplementation, enterPlanning, enterWaitingForPlanApproval } from "../../workflowState"
 import type { IPartialBlockHandler, IToolHandler } from "../ToolExecutorCoordinator"
 import type { TaskConfig } from "../types/TaskConfig"
 import type { StronglyTypedUIHelpers } from "../types/UIHelpers"
@@ -45,6 +46,9 @@ export class PlanModeRespondHandler implements IToolHandler, IPartialBlockHandle
 		}
 
 		config.taskState.consecutiveMistakeCount = 0
+		if (config.mode === "plan") {
+			config.taskState.workflowState = enterPlanning(config.taskState.workflowState)
+		}
 
 		// The plan_mode_respond tool tends to run into this issue where the model realizes mid-tool call that it should have called another tool before calling plan_mode_respond. And it ends the plan_mode_respond tool call with 'Proceeding to reading files...' which doesn't do anything because we restrict to 1 tool call per message. As an escape hatch for the model, we provide it the optionality to tack on a parameter at the end of its response `needs_more_exploration`, which will allow the loop to continue.
 		if (needsMoreExploration) {
@@ -72,6 +76,8 @@ export class PlanModeRespondHandler implements IToolHandler, IPartialBlockHandle
 			const switchSuccessful = await config.callbacks.switchToActMode()
 
 			if (switchSuccessful) {
+				config.taskState.workflowState = approvePlanForImplementation(config.taskState.workflowState)
+
 				// Complete the plan mode response tool call (this is a unique case where we auto-respond to the user with an ask response)
 				const lastPlanMessage = findLast(config.messageState.getClineMessages(), (m: any) => m.ask === this.name)
 				if (lastPlanMessage) {
@@ -89,6 +95,7 @@ export class PlanModeRespondHandler implements IToolHandler, IPartialBlockHandle
 		}
 
 		// Set awaiting plan response state
+		config.taskState.workflowState = enterWaitingForPlanApproval(config.taskState.workflowState)
 		config.taskState.isAwaitingPlanResponse = true
 
 		// Ask for user response
@@ -136,6 +143,8 @@ export class PlanModeRespondHandler implements IToolHandler, IPartialBlockHandle
 
 		// Handle mode switching response
 		if (config.taskState.didRespondToPlanAskBySwitchingMode) {
+			config.taskState.workflowState = approvePlanForImplementation(config.taskState.workflowState)
+
 			const result = formatResponse.toolResult(
 				`[The user has switched to ACT MODE, so you may now proceed with the task.]` +
 					(text

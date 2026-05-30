@@ -2,6 +2,7 @@ import { Anthropic } from "@anthropic-ai/sdk"
 import { AssistantMessageContent } from "@core/assistant-message"
 import { ClineAskResponse } from "@shared/WebviewMessage"
 import type { HookExecution } from "./types/HookExecution"
+import type { WorkflowState } from "./workflowState"
 
 export class TaskState {
 	// Task-level timing
@@ -33,6 +34,7 @@ export class TaskState {
 	lastMessageTs?: number
 
 	// Plan mode specific state
+	workflowState: WorkflowState = "idle"
 	isAwaitingPlanResponse = false
 	didRespondToPlanAskBySwitchingMode = false
 
