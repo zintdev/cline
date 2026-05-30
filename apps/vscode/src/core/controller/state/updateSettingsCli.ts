@@ -1,4 +1,5 @@
-import { buildApiHandler } from "@core/api"
+import { buildApiHandler, resolveApiConfigurationForMainTask } from "@core/api"
+import { loadModelRoutingConfig } from "@core/custom/configLoader"
 
 import { Empty } from "@shared/proto/cline/common"
 import { PlanActMode, UpdateSettingsRequestCli } from "@shared/proto/cline/state"
@@ -118,11 +119,12 @@ export async function updateSettingsCli(controller: Controller, request: UpdateS
 
 			if (controller.task) {
 				const currentMode = controller.stateManager.getGlobalSettingsKey("mode")
-				const apiConfigForHandler = {
+				const baseApiConfig = {
 					...controller.stateManager.getApiConfiguration(),
 					ulid: controller.task.ulid,
 				}
-				controller.task.api = buildApiHandler(apiConfigForHandler, currentMode)
+				const routedApiConfig = resolveApiConfigurationForMainTask(baseApiConfig, currentMode, loadModelRoutingConfig())
+				controller.task.api = buildApiHandler(routedApiConfig, currentMode)
 			}
 
 			// Update telemetry setting

@@ -1,6 +1,7 @@
 import { Empty } from "@shared/proto/cline/common"
 import { convertProtoToApiProvider } from "@shared/proto-conversions/models/api-configuration-conversion"
-import { buildApiHandler } from "@/core/api"
+import { buildApiHandler, resolveApiConfigurationForMainTask } from "@/core/api"
+import { loadModelRoutingConfig } from "@/core/custom/configLoader"
 import { ApiHandlerOptions, ApiProvider } from "@/shared/api"
 import { UpdateApiConfigurationRequestNew } from "@/shared/proto/index.cline"
 import { Logger } from "@/shared/services/Logger"
@@ -142,13 +143,12 @@ export async function updateApiConfiguration(controller: Controller, request: Up
 		if (controller.task) {
 			const currentMode = controller.stateManager.getGlobalSettingsKey("mode")
 			// Build updated config
-			controller.task.api = buildApiHandler(
-				{
-					...controller.stateManager.getApiConfiguration(),
-					ulid: controller.task.ulid,
-				},
-				currentMode,
-			)
+			const baseApiConfig = {
+				...controller.stateManager.getApiConfiguration(),
+				ulid: controller.task.ulid,
+			}
+			const routedApiConfig = resolveApiConfigurationForMainTask(baseApiConfig, currentMode, loadModelRoutingConfig())
+			controller.task.api = buildApiHandler(routedApiConfig, currentMode)
 		}
 
 		// Post updated state to webview
