@@ -111,26 +111,34 @@ Validation:
 - `npm run check-types`: PASS
 - `npm run package`: PASS
 
+### Phase 5.1e — Workflow State Next Runtime Boundary Planning
+
+Status: DONE
+
+Decision:
+- Phase 5.1 is complete through Phase 5.1d.
+- No Phase 5.1e runtime implementation is recommended.
+- Normal Plan feedback reset is already covered by Phase 5.1d.
+- `needs_more_exploration` should remain `planning`.
+- Plan → Act and YOLO Plan → Act should remain `implementationAllowed`.
+- Missing/malformed response reset has very low value and is not recommended.
+- Cancellation, task completion, and task disposal are broader lifecycle concerns and should be planned separately.
+
 ## Current Phase
 
-Phase 5.1d is complete. The next recommended step is Phase 5.1e planning only.
+Phase 5.1 is complete through Phase 5.1d. No Phase 5.1e runtime implementation is recommended.
 
 ## Next Recommended Phase
 
-### Phase 5.1e — Workflow State Next Runtime Boundary Planning
+### Phase 5.2 — Workflow Lifecycle Boundary Planning
 
 Goal:
-- Decide whether any additional passive workflow-state reset boundary is needed, such as cancellation, task completion, or task disposal.
+- Plan whether broader lifecycle reset behavior is needed for cancellation, task completion, or task disposal.
 
 Planning only:
-- Do not implement enforcement.
-- Do not add persistence or migration.
-- Do not change controller unless separately approved.
-- Do not change ToolExecutor unless separately approved.
-- Do not change UI/webview/proto/generated files.
-- Do not touch subagents or Phase 4 routing.
-
-Do not implement Phase 5.1e without approval.
+- Do not implement lifecycle reset behavior without approval.
+- Do not touch controller, ToolExecutor, Task lifecycle, persistence/state manager, UI/proto/generated files, subagents, or Phase 4 routing unless separately approved.
+- Treat cancellation/completion/disposal as a separate lifecycle phase, not a small Phase 5.1 continuation.
 
 ## Guardrails
 
@@ -147,6 +155,6 @@ Do not touch unless explicitly approved:
 
 Do not:
 - run validation without approval
-- implement Phase 5.1e without approval
+- implement Phase 5.2 without approval
 - commit without approval
 - use `git add .`
