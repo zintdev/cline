@@ -1,5 +1,5 @@
 import { setTimeout as setTimeoutPromise } from "node:timers/promises"
-import { ApiHandler, ApiProviderInfo, buildApiHandler } from "@core/api"
+import { ApiHandler, ApiProviderInfo, buildApiHandler, resolveApiConfigurationForRole } from "@core/api"
 import { ApiStream } from "@core/api/transform/stream"
 import { AssistantMessageContent, parseAssistantMessageV2, ToolUse } from "@core/assistant-message"
 import { ContextManager } from "@core/context/context-management/ContextManager"
@@ -7,7 +7,7 @@ import { checkContextWindowExceededError } from "@core/context/context-managemen
 import { getContextWindowInfo } from "@core/context/context-management/context-window-utils"
 import { EnvironmentContextTracker } from "@core/context/context-tracking/EnvironmentContextTracker"
 import { FileContextTracker } from "@core/context/context-tracking/FileContextTracker"
-import { loadSafeCommandsConfig } from "@core/custom/configLoader"
+import { loadModelRoutingConfig, loadSafeCommandsConfig } from "@core/custom/configLoader"
 import { safeCommandsConfigToCommandPermissionConfig } from "@core/custom/safeCommandPolicy"
 import { ModelContextTracker } from "@core/context/context-tracking/ModelContextTracker"
 import {
@@ -492,9 +492,17 @@ export class Task {
 		}
 		const mode = this.stateManager.getGlobalSettingsKey("mode")
 		const currentProvider = mode === "plan" ? apiConfiguration.planModeApiProvider : apiConfiguration.actModeApiProvider
+		const modelRoutingConfig = loadModelRoutingConfig()
+		const modelRoutingRole = mode === "plan" ? "planning" : "implementation"
+		const routedApiConfiguration = resolveApiConfigurationForRole(
+			effectiveApiConfiguration,
+			mode,
+			modelRoutingRole,
+			modelRoutingConfig,
+		)
 
 		// Now that ulid is initialized, we can build the API handler
-		this.api = buildApiHandler(effectiveApiConfiguration, mode)
+		this.api = buildApiHandler(routedApiConfiguration, mode)
 
 		// Set ulid on browserSession for telemetry tracking
 		this.browserSession.setUlid(this.ulid)
