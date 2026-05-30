@@ -1,4 +1,5 @@
-import { buildApiHandler } from "@core/api"
+import { buildApiHandler, resolveApiConfigurationForRole } from "@core/api"
+import { loadModelRoutingConfig } from "@core/custom/configLoader"
 import { isBinaryFile } from "isbinaryfile"
 import { HostProvider } from "@/hosts/host-provider"
 import { formatContentBlockToMarkdown } from "@/integrations/misc/export-markdown"
@@ -120,7 +121,9 @@ export async function streamAIExplanationComments(
 		actModeThinkingBudgetTokens: 0,
 		planModeThinkingBudgetTokens: 0,
 	}
-	const apiHandler = buildApiHandler(configWithoutThinking, "act")
+	const routingConfig = loadModelRoutingConfig()
+	const routedConfig = resolveApiConfigurationForRole(configWithoutThinking, "act", "diffReview", routingConfig)
+	const apiHandler = buildApiHandler(routedConfig, "act")
 
 	const fileCount = changedFiles.length
 	const maxCommentsPerFile = fileCount > 3 ? 1 : 3
@@ -306,6 +309,8 @@ async function handleCommentReply(
 		actModeThinkingBudgetTokens: 0,
 		planModeThinkingBudgetTokens: 0,
 	}
+	const routingConfig = loadModelRoutingConfig()
+	const routedConfig = resolveApiConfigurationForRole(configWithoutThinking, "act", "diffReview", routingConfig)
 
 	// Find the relevant file - check both absolutePath and relativePath for robustness
 	const file = changedFiles.find((f) => f.absolutePath === filePath || f.relativePath === filePath)
@@ -318,7 +323,7 @@ async function handleCommentReply(
 	const afterLines = file.after.split("\n")
 	const codeSnippet = afterLines.slice(startLine, endLine + 1).join("\n")
 
-	const apiHandler = buildApiHandler(configWithoutThinking, "act")
+	const apiHandler = buildApiHandler(routedConfig, "act")
 
 	const systemPrompt = `${EXPLAINER_SYSTEM_PROMPT}
 
