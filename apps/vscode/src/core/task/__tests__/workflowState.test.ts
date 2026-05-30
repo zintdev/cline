@@ -6,6 +6,7 @@ import {
 	enterWaitingForPlanApproval,
 	isWorkflowState,
 	normalizeWorkflowState,
+	resetWorkflowState,
 	WORKFLOW_STATES,
 } from "../workflowState"
 
@@ -47,6 +48,14 @@ describe("workflowState", () => {
 		enterWaitingForPlanApproval("planning").should.equal("waitingForPlanApproval")
 		enterWaitingForPlanApproval("implementationAllowed").should.equal("waitingForPlanApproval")
 		enterWaitingForPlanApproval("invalid").should.equal("waitingForPlanApproval")
+	})
+
+	it("resets workflow state to idle from any current state", () => {
+		resetWorkflowState().should.equal("idle")
+		resetWorkflowState("planning").should.equal("idle")
+		resetWorkflowState("waitingForPlanApproval").should.equal("idle")
+		resetWorkflowState("implementationAllowed").should.equal("idle")
+		resetWorkflowState("invalid").should.equal("idle")
 	})
 
 	it("approves planning states for implementation", () => {
