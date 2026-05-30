@@ -18,6 +18,10 @@ export function enterWaitingForPlanApproval(_currentState?: unknown): WorkflowSt
 	return "waitingForPlanApproval"
 }
 
+export function resetWorkflowState(_currentState?: unknown): WorkflowState {
+	return "idle"
+}
+
 export function approvePlanForImplementation(currentState?: unknown): WorkflowState {
 	const state = normalizeWorkflowState(currentState)
 
