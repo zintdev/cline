@@ -560,7 +560,9 @@ export class Controller {
 			await fetchRemoteConfig(this)
 
 			if (this.task) {
-				this.task.api = buildApiHandler({ ...updatedConfig, ulid: this.task.ulid }, currentMode)
+				const baseApiConfig = { ...updatedConfig, ulid: this.task.ulid }
+				const routedApiConfig = resolveApiConfigurationForMainTask(baseApiConfig, currentMode, loadModelRoutingConfig())
+				this.task.api = buildApiHandler(routedApiConfig, currentMode)
 			}
 
 			await this.postStateToWebview()
@@ -611,7 +613,9 @@ export class Controller {
 			this.stateManager.setGlobalState("welcomeViewCompleted", true)
 
 			if (this.task) {
-				this.task.api = buildApiHandler({ ...updatedConfig, ulid: this.task.ulid }, currentMode)
+				const baseApiConfig = { ...updatedConfig, ulid: this.task.ulid }
+				const routedApiConfig = resolveApiConfigurationForMainTask(baseApiConfig, currentMode, loadModelRoutingConfig())
+				this.task.api = buildApiHandler(routedApiConfig, currentMode)
 			}
 
 			await this.postStateToWebview()
@@ -729,7 +733,9 @@ export class Controller {
 
 		await this.postStateToWebview()
 		if (this.task) {
-			this.task.api = buildApiHandler({ ...updatedConfig, ulid: this.task.ulid }, currentMode)
+			const baseApiConfig = { ...updatedConfig, ulid: this.task.ulid }
+			const routedApiConfig = resolveApiConfigurationForMainTask(baseApiConfig, currentMode, loadModelRoutingConfig())
+			this.task.api = buildApiHandler(routedApiConfig, currentMode)
 		}
 		// Dont send settingsButtonClicked because its bad ux if user is on welcome
 	}
@@ -749,7 +755,9 @@ export class Controller {
 		this.stateManager.setApiConfiguration(updatedConfig)
 		await this.postStateToWebview()
 		if (this.task) {
-			this.task.api = buildApiHandler({ ...updatedConfig, ulid: this.task.ulid }, currentMode)
+			const baseApiConfig = { ...updatedConfig, ulid: this.task.ulid }
+			const routedApiConfig = resolveApiConfigurationForMainTask(baseApiConfig, currentMode, loadModelRoutingConfig())
+			this.task.api = buildApiHandler(routedApiConfig, currentMode)
 		}
 	}
 
@@ -789,7 +797,9 @@ export class Controller {
 		await this.postStateToWebview()
 		this.accountService
 		if (this.task) {
-			this.task.api = buildApiHandler({ ...updatedConfig, ulid: this.task.ulid }, currentMode)
+			const baseApiConfig = { ...updatedConfig, ulid: this.task.ulid }
+			const routedApiConfig = resolveApiConfigurationForMainTask(baseApiConfig, currentMode, loadModelRoutingConfig())
+			this.task.api = buildApiHandler(routedApiConfig, currentMode)
 		}
 	}
 
