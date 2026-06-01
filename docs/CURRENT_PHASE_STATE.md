@@ -7,6 +7,22 @@ Branch: `custom/phase-4-model-routing`
 Expected working tree: clean
 Latest expected commit: `e1839bf7c docs: record phase 5.2 planning decision`
 
+## Known Local Worktree Artifacts
+
+The main worktree currently has local dirty entries that are not approved for cleanup:
+- `.claude/commands/hotfix-release.md`
+- `.claude/commands/release.md`
+- `.claude/skills/cline-sdk`
+- `.worktreeinclude`
+- `sdk/apps/cli/.agents/skills/publish-cli`
+- `sdk/apps/cli/.claude/skills/opentui`
+- `sdk/apps/cli/.claude/skills/publish-cli`
+- `evals/cline-bench`
+
+The non-submodule paths are tracked as mode `120000` symlink/special-file entries, and `git diff` may emit `Function not implemented` for them in this environment. `evals/cline-bench` is a submodule/nested repo marker. Treat these as known local environment/worktree artifacts unless separately inspected and approved for cleanup.
+
+Future source/runtime coding should preferably use fresh WSL-native worktrees to avoid symlink/UNC artifact noise and reduce accidental staging risk.
+
 ## Recently Completed
 
 ### Phase 4.1d — diffReview Routing
