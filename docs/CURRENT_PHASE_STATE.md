@@ -124,21 +124,37 @@ Decision:
 - Missing/malformed response reset has very low value and is not recommended.
 - Cancellation, task completion, and task disposal are broader lifecycle concerns and should be planned separately.
 
+### Phase 5.2 — Workflow Lifecycle Boundary Planning
+
+Status: DONE — planning decision only
+
+Decision:
+- No implementation now.
+- Do not add lifecycle reset behavior yet.
+- TaskState.workflowState remains runtime-only and passive.
+- PlanModeRespondHandler remains the only runtime workflow-state integration surface from Phase 5.1.
+- Cancellation/abort, task completion, task disposal, restart/resume, and error paths are broader lifecycle boundaries.
+- Passive abort reset via Task.abortTask() may be considered later as a separate Phase 5.2a only if explicitly approved.
+- No persistence, migration, enforcement, controller, ToolExecutor, UI/proto/generated, subagent, or Phase 4 routing changes are approved.
+
 ## Current Phase
 
-Phase 5.1 is complete through Phase 5.1d. No Phase 5.1e runtime implementation is recommended.
+Phase 5.2 planning is complete. No Phase 5.2 runtime implementation is approved now.
+
+Phase 5.1 remains the completed workflow-state implementation scope.
 
 ## Next Recommended Phase
 
-### Phase 5.2 — Workflow Lifecycle Boundary Planning
+### Next Phase — PM Decision / New Scope Selection
 
 Goal:
-- Plan whether broader lifecycle reset behavior is needed for cancellation, task completion, or task disposal.
+- Decide whether to pause workflow-state work, open a separate lifecycle phase, or move to another project priority.
 
 Planning only:
 - Do not implement lifecycle reset behavior without approval.
 - Do not touch controller, ToolExecutor, Task lifecycle, persistence/state manager, UI/proto/generated files, subagents, or Phase 4 routing unless separately approved.
-- Treat cancellation/completion/disposal as a separate lifecycle phase, not a small Phase 5.1 continuation.
+
+Do not implement the next phase without approval.
 
 ## Guardrails
 
@@ -155,6 +171,6 @@ Do not touch unless explicitly approved:
 
 Do not:
 - run validation without approval
-- implement Phase 5.2 without approval
+- implement the next phase without approval
 - commit without approval
 - use `git add .`
