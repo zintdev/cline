@@ -2,10 +2,10 @@
 
 ## Repo
 
-Path: `/home/zintdev/projects/cline-phase-5-1c-clean`
-Branch: `custom/phase-5-1c-workflow-state-clean`
+Path: `/home/zintdev/projects/cline`
+Branch: `custom/phase-4-model-routing`
 Expected working tree: clean
-Latest expected commit: `e2e75d221 feat: reset workflow state after plan feedback`
+Latest expected commit: `e1839bf7c docs: record phase 5.2 planning decision`
 
 ## Recently Completed
 
