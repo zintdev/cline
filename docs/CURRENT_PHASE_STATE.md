@@ -5,7 +5,7 @@
 Path: `/home/zintdev/projects/cline`
 Branch: `custom/phase-4-model-routing`
 Expected working tree: clean
-Latest expected commit: `e1839bf7c docs: record phase 5.2 planning decision`
+Latest expected baseline: `e1839bf7c docs: record phase 5.2 planning decision`; later docs-only handoff/local-artifact metadata commits may exist. Verify current HEAD with `git log --oneline -5`.
 
 ## Known Local Worktree Artifacts
 
